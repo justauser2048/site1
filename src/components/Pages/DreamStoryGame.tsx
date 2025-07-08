@@ -21,7 +21,6 @@ interface GameState {
   currentRoom: 'bedroom' | 'living' | 'kitchen' | 'gym' | 'bathroom';
   characterState: 'idle' | 'sleep' | 'eat' | 'exercise' | 'relax' | 'drinkWater' | 'shower';
   usedObjects: Set<string>;
-  showWelcome: boolean;
 }
 
 interface GameAction {
@@ -52,27 +51,12 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
     gameOverReason: '',
     currentRoom: 'bedroom',
     characterState: 'idle',
-    usedObjects: new Set(),
-    showWelcome: true
+    usedObjects: new Set()
   });
 
   const [isMuted, setIsMuted] = useState(false);
   const [gameStyle, setGameStyle] = useState<'2d' | 'isometric'>('2d');
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
-
-  const daysOfWeek = [
-    'Segunda-feira',
-    'Terça-feira', 
-    'Quarta-feira',
-    'Quinta-feira',
-    'Sexta-feira',
-    'Sábado',
-    'Domingo'
-  ];
-
-  const getCurrentDayName = () => {
-    return daysOfWeek[(gameState.day - 1) % 7];
-  };
 
   const gameActions: GameAction[] = [
     { id: 'bed', name: 'Dormir', energy: 40, sleep: 50, health: 10, happiness: 5, duration: 480, room: 'bedroom', state: 'sleep' },
@@ -101,14 +85,6 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
     { id: 'bathroom', name: 'Banheiro', icon: '🚿' }
   ];
 
-  const startWelcomeGame = () => {
-    setGameState(prev => ({
-      ...prev,
-      showWelcome: false,
-      isPaused: false
-    }));
-  };
-
   const resetGame = () => {
     setGameState({
       energy: 80,
@@ -124,15 +100,12 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
       gameOverReason: '',
       currentRoom: 'bedroom',
       characterState: 'idle',
-      usedObjects: new Set(),
-      showWelcome: true
+      usedObjects: new Set()
     });
   };
 
   const togglePause = () => {
-    if (!gameState.showWelcome) {
-      setGameState(prev => ({ ...prev, isPaused: !prev.isPaused }));
-    }
+    setGameState(prev => ({ ...prev, isPaused: !prev.isPaused }));
   };
 
   const changeGameSpeed = () => {
@@ -201,7 +174,7 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
   };
 
   useEffect(() => {
-    if (gameState.showWelcome || gameState.isPaused || gameState.isGameOver) {
+    if (gameState.isPaused || gameState.isGameOver) {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
         gameLoopRef.current = null;
@@ -280,7 +253,7 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
         clearInterval(gameLoopRef.current);
       }
     };
-  }, [gameState.showWelcome, gameState.isPaused, gameState.isGameOver, gameState.gameSpeed]);
+  }, [gameState.isPaused, gameState.isGameOver, gameState.gameSpeed]);
 
   const getStatColor = (value: number) => {
     if (value >= 70) return 'text-emerald-400';
@@ -316,51 +289,6 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
       );
     });
   };
-
-  // Welcome Screen
-  if (gameState.showWelcome) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-        isDark 
-          ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950' 
-          : 'bg-gradient-to-br from-white via-emerald-50/80 to-emerald-100/60'
-      }`}>
-        <div className={`backdrop-blur-sm rounded-2xl p-8 border max-w-lg w-full mx-6 text-center transition-colors duration-300 ${
-          isDark 
-            ? 'bg-slate-900/80 border-slate-800' 
-            : 'bg-white/90 border-gray-200 shadow-lg'
-        }`}>
-          <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Gamepad2 className="w-10 h-10 text-purple-400" />
-          </div>
-          
-          <h2 className={`text-2xl font-bold mb-4 transition-colors duration-300 ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}>
-            💤 Bem-vindo ao Dream Story!
-          </h2>
-          
-          <p className={`text-base mb-6 leading-relaxed transition-colors duration-300 ${
-            isDark ? 'text-slate-300' : 'text-gray-700'
-          }`}>
-            Aqui você vai guiar Alex por uma jornada em busca de melhorar seu sono e sua saúde.
-            <br /><br />
-            Faça boas escolhas, mantenha o equilíbrio e cuide bem do corpo e da mente!
-            <br /><br />
-            Boa sorte!
-          </p>
-          
-          <button
-            onClick={startWelcomeGame}
-            className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-colors duration-200 flex items-center gap-2 mx-auto"
-          >
-            <Play className="w-5 h-5" />
-            Vamos lá!
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Game Over Screen
   if (gameState.isGameOver) {
@@ -413,6 +341,16 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
       </div>
     );
   }
+
+  const getCurrentWeek = () => {
+    return Math.ceil(gameState.day / 7);
+  };
+
+  const getWeekProgress = () => {
+    const currentWeek = getCurrentWeek();
+    const maxWeeks = 2;
+    return `${currentWeek}/${maxWeeks}`;
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -515,7 +453,7 @@ const DreamStoryGame: React.FC<DreamStoryGameProps> = ({ onBack }) => {
             <div className={`text-sm font-medium transition-colors duration-300 ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>
-              {getCurrentDayName()}
+              Semana {getWeekProgress()}
             </div>
             <div className={`text-sm transition-colors duration-300 ${
               isDark ? 'text-slate-400' : 'text-gray-600'
